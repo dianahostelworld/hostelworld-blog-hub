@@ -1,0 +1,792 @@
+<?php
+/**
+ * Country Hub
+ *
+ * Rendered by the Hostelworld Blog Hubs plugin when a Page uses the "Country
+ * Hub" template. All content comes from the "Country hub content" panel on the
+ * Page itself, so there is nothing to edit in here.
+ *
+ * Where the continent hub routes people onwards, this one is meant to be read:
+ * each section is real copy, followed by a carousel of articles carrying this
+ * country's tag plus that section's topic tag.
+ *
+ * @package Hostelworld
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+$hub      = hw_hub_country_config();
+$taxonomy = hw_hub_taxonomy();
+$can_edit = current_user_can( 'edit_post', get_the_ID() );
+
+$hub_label = hw_hub_page_title( get_the_ID() );
+if ( '' === $hub_label ) {
+	$hub_label = ucwords( str_replace( '-', ' ', $hub['hub_term'] ) );
+}
+
+hw_hub_site_header();
+
+if ( have_posts() ) {
+	the_post();
+}
+?>
+
+<main class="hw-hub hw-hub--country" id="hw-hub">
+
+	<?php /* ---------- Hero ---------- */ ?>
+	<?php
+	$hero_markup  = hw_hub_image( $hub['hero_image'], $hub_label, 'full' );
+	$hero_overlay = in_array( $hub['hero_overlay'], array( 'light', 'medium', 'strong' ), true ) ? $hub['hero_overlay'] : 'light';
+	?>
+	<section class="hw-hub__hero hw-hub__hero--veil-<?php echo esc_attr( $hero_overlay ); ?> hw-hub__hero--crumbs<?php echo $hero_markup ? '' : ' hw-hub__hero--plain'; ?>">
+		<?php if ( $hero_markup ) : ?>
+			<div class="hw-hub__hero-bg"><?php echo $hero_markup; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+			<div class="hw-hub__hero-veil" aria-hidden="true"></div>
+		<?php endif; ?>
+
+		<?php hw_hub_render_breadcrumbs( get_the_ID(), $hub['parent_hub'] ); ?>
+
+		<div class="hw-hub__wrap hw-hub__hero-inner">
+			<?php if ( $hub['eyebrow'] ) : ?>
+				<div class="hw-hub__hero-eyebrow"><?php echo esc_html( $hub['eyebrow'] ); ?></div>
+			<?php endif; ?>
+
+			<h1><?php echo esc_html( $hub['h1'] ); ?></h1>
+			<p class="hw-hub__hero-intro"><?php echo esc_html( $hub['intro'] ); ?></p>
+
+			<div class="hw-hub__hero-actions">
+				<?php foreach ( $hub['hero_cta'] as $i => $cta ) : ?>
+					<?php $cta_url = hw_hub_url( $cta['href'] ); ?>
+					<?php if ( $cta_url ) : ?>
+						<a class="hw-hub__btn<?php echo 0 === $i ? '' : ' hw-hub__btn--ghost'; ?>" href="<?php echo esc_url( $cta_url ); ?>"><?php echo esc_html( $cta['label'] ); ?></a>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</div>
+
+			<?php if ( $hub['stats'] ) : ?>
+				<div class="hw-hub__hero-stats">
+					<?php foreach ( $hub['stats'] as $stat ) : ?>
+						<div class="hw-hub__hero-stat">
+							<div class="hw-hub__hero-stat-value"><?php echo esc_html( $stat['value'] ); ?></div>
+							<div class="hw-hub__hero-stat-label"><?php echo esc_html( $stat['label'] ); ?></div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+		</div>
+	</section>
+
+	<?php /* ---------- Jump nav ---------- */ ?>
+	<nav class="hw-hub__jump" aria-label="<?php echo esc_attr( hw_hub_t( 'On this page' ) ); ?>">
+				<div class="hw-hub__wrap hw-hub__jump-inner">
+			<button type="button" class="hw-hub__jump-btn" data-direction="prev" aria-label="<?php echo esc_attr( hw_hub_t( 'Scroll sections left' ) ); ?>" hidden>
+				<?php echo hw_hub_icon( 'arrow-left', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			</button>
+
+			<div class="hw-hub__jump-scroll">
+
+			<a href="#overview"><?php echo esc_html( hw_hub_t( 'Overview' ) ); ?></a>
+			<a href="#cities"><?php echo esc_html( hw_hub_t( 'Cities' ) ); ?></a>
+			<a href="#trips"><?php echo esc_html( hw_hub_t( 'Types of trip' ) ); ?></a>
+			<?php foreach ( $hub['sections'] as $section ) : ?>
+				<a href="#<?php echo esc_attr( $section['key'] ); ?>"><?php echo esc_html( $section['nav'] ); ?></a>
+			<?php endforeach; ?>
+			<a href="#season"><?php echo esc_html( hw_hub_t( 'When to go' ) ); ?></a>
+			<a href="#budget"><?php echo esc_html( hw_hub_t( 'Budget' ) ); ?></a>
+			<a href="#events"><?php echo esc_html( hw_hub_t( "What's on" ) ); ?></a>
+			<a href="#hostels"><?php echo esc_html( hw_hub_t( 'Hostels' ) ); ?></a>
+			<a href="#faqs"><?php echo esc_html( hw_hub_t( 'FAQs' ) ); ?></a>
+			</div>
+
+			<button type="button" class="hw-hub__jump-btn" data-direction="next" aria-label="<?php echo esc_attr( hw_hub_t( 'Scroll sections right' ) ); ?>" hidden>
+				<?php echo hw_hub_icon( 'arrow-right', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			</button>
+		</div>
+	</nav>
+
+	<?php /* ---------- Overview ---------- */ ?>
+	<section id="overview" class="hw-hub__overview">
+		<div class="hw-hub__wrap hw-hub__overview-grid">
+			<div>
+				<h2><?php echo esc_html( $hub['intro_title'] ); ?></h2>
+				<?php
+				$page_content = trim( get_post_field( 'post_content', get_the_ID() ) );
+
+				if ( $page_content ) {
+					the_content();
+				} else {
+					foreach ( $hub['intro_body'] as $para ) {
+						echo '<p>' . esc_html( $para ) . '</p>';
+					}
+				}
+				?>
+			</div>
+
+			<?php if ( $hub['facts'] ) : ?>
+				<aside class="hw-hub__facts">
+					<h3><?php echo esc_html( $hub_label ); ?> <?php echo esc_html( hw_hub_t( 'in short' ) ); ?></h3>
+					<dl>
+						<?php foreach ( $hub['facts'] as $fact ) : ?>
+							<div class="hw-hub__fact">
+								<dt><?php echo esc_html( $fact['label'] ); ?></dt>
+								<dd><?php echo esc_html( $fact['value'] ); ?></dd>
+							</div>
+						<?php endforeach; ?>
+					</dl>
+				</aside>
+			<?php endif; ?>
+		</div>
+	</section>
+
+	<?php
+	/* The property feed powers both the hostels carousel and the city prices,
+	   so it is fetched once here and reused. */
+	$live      = ( 'manual' === $hub['hostels_source'] ) ? array() : hw_hub_api_hostels( $hub['hostels_api'] );
+	$city_data = $hub['cities_live']
+		? hw_hub_api_city_data(
+			array(
+				'country' => $hub['events_api']['country'],
+				'cities'  => wp_list_pluck( $hub['cities'], 'name' ),
+			)
+		)
+		: array();
+	$city_from = $hub['cities_live'] ? hw_hub_city_prices_from_feed( $live ) : array();
+	?>
+
+	<?php /* ---------- Cities ---------- */ ?>
+	<?php if ( $hub['cities'] ) : ?>
+		<section id="cities" class="hw-hub__cities">
+			<div class="hw-hub__wrap">
+				<h2><?php echo esc_html( $hub['cities_title'] ); ?></h2>
+				<p class="hw-hub__lede"><?php echo esc_html( $hub['cities_intro'] ); ?></p>
+
+				<div class="hw-hub__city-list">
+					<?php foreach ( $hub['cities'] as $city ) : ?>
+						<?php
+						$city_url    = $city['guide'] ? hw_hub_url( $city['guide'] ) : hw_hub_country_url( $city['name'] );
+						$city_img    = hw_hub_image( $city['image'], $city['name'], 'large' );
+						$key         = strtolower( $city['name'] );
+						$data        = isset( $city_data[ $key ] ) ? $city_data[ $key ] : array();
+						$from        = isset( $city_from[ $key ] ) ? $city_from[ $key ] : array();
+						$quote       = ! empty( $city['quote'] ) ? $city['quote'] : ''; // Editor-picked only. Never fall back to a live review.
+						$itineraries = hw_hub_city_itineraries( isset( $city['itineraries'] ) ? $city['itineraries'] : '' );
+						$stats       = array();
+
+						if ( ! empty( $data['properties'] ) ) {
+							$stats[] = sprintf(
+								/* translators: %s: number of hostels */
+								_n( '%s hostel', '%s hostels', $data['properties'], 'hostelworld' ),
+								number_format_i18n( $data['properties'] )
+							);
+						}
+
+						if ( ! empty( $from['value'] ) ) {
+							$stats[] = sprintf(
+								/* translators: %s: price with currency symbol */
+								hw_hub_t( 'dorms from %s' ),
+								hw_hub_price_label( $from )
+							);
+						}
+						?>
+
+						<article class="hw-hub__city-row">
+							<div class="hw-hub__city-photo">
+								<?php echo $city_img; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+							</div>
+
+							<div class="hw-hub__city-content">
+								<div class="hw-hub__city-main">
+									<div>
+										<h3><?php echo esc_html( $city['name'] ); ?></h3>
+
+										<?php if ( $stats ) : ?>
+											<div class="hw-hub__city-stats"><?php echo esc_html( implode( ' · ', $stats ) ); ?></div>
+										<?php endif; ?>
+
+										<?php if ( $city['blurb'] ) : ?>
+											<p class="hw-hub__city-blurb"><?php echo esc_html( $city['blurb'] ); ?></p>
+										<?php endif; ?>
+
+										<?php if ( $quote ) : ?>
+											<blockquote class="hw-hub__city-quote">
+												<p><?php echo esc_html( $quote ); ?></p>
+												<cite><?php echo esc_html( hw_hub_t( 'A traveller, on Hostelworld' ) ); ?></cite>
+											</blockquote>
+										<?php endif; ?>
+									</div>
+
+									<?php if ( $city_url ) : ?>
+										<a class="hw-hub__btn hw-hub__city-btn" href="<?php echo esc_url( $city_url ); ?>">
+											<?php
+											printf(
+												/* translators: %s: city name */
+												esc_html( hw_hub_t( 'The %s guide' ) ),
+												esc_html( $city['name'] )
+											);
+											?>
+											<?php echo hw_hub_icon( 'arrow-right', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+										</a>
+									<?php endif; ?>
+								</div>
+
+								<?php if ( $itineraries ) : ?>
+									<div class="hw-hub__itineraries">
+										<span class="hw-hub__itineraries-label"><?php echo esc_html( hw_hub_t( 'Got this long?' ) ); ?></span>
+										<?php foreach ( $itineraries as $itinerary ) : ?>
+											<a class="hw-hub__itinerary" href="<?php echo esc_url( $itinerary['url'] ); ?>">
+												<?php echo hw_hub_icon( 'calendar', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+												<span><?php echo esc_html( $itinerary['label'] ); ?></span>
+											</a>
+										<?php endforeach; ?>
+									</div>
+								<?php endif; ?>
+							</div>
+						</article>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		</section>
+	<?php endif; ?>
+
+	<?php /* ---------- Types of trip ---------- */ ?>
+	<?php if ( $hub['trip_types'] ) : ?>
+		<section id="trips" class="hw-hub__triptypes">
+			<div class="hw-hub__wrap">
+				<h2><?php echo esc_html( $hub['trips_title'] ); ?></h2>
+				<p class="hw-hub__lede"><?php echo esc_html( $hub['trips_intro'] ); ?></p>
+
+				<div class="hw-hub__trip-tabs" role="tablist">
+					<?php foreach ( $hub['trip_types'] as $i => $trip ) : ?>
+						<button
+							type="button"
+							class="hw-hub__trip-tab hw-hub__trip-tab--<?php echo esc_attr( $trip['colour'] ); ?><?php echo 0 === $i ? ' is-active' : ''; ?>"
+							role="tab"
+							id="tab-<?php echo esc_attr( $trip['id'] ); ?>"
+							aria-controls="panel-<?php echo esc_attr( $trip['id'] ); ?>"
+							aria-selected="<?php echo 0 === $i ? 'true' : 'false'; ?>"
+						>
+							<?php echo hw_hub_icon( $trip['icon'], 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+							<span><?php echo esc_html( $trip['name'] ); ?></span>
+						</button>
+					<?php endforeach; ?>
+				</div>
+
+				<?php foreach ( $hub['trip_types'] as $i => $trip ) : ?>
+					<div
+						class="hw-hub__trip-panel hw-hub__trip-panel--<?php echo esc_attr( $trip['colour'] ); ?><?php echo 0 === $i ? ' is-active' : ''; ?>"
+						id="panel-<?php echo esc_attr( $trip['id'] ); ?>"
+						role="tabpanel"
+						aria-labelledby="tab-<?php echo esc_attr( $trip['id'] ); ?>"
+						<?php echo 0 === $i ? '' : 'hidden'; ?>
+					>
+						<div class="hw-hub__trip-head">
+							<h3><?php echo esc_html( $trip['name'] ); ?> <?php echo esc_html( hw_hub_t( 'in' ) ); ?> <?php echo esc_html( $hub_label ); ?></h3>
+							<?php if ( $trip['summary'] ) : ?>
+								<p><?php echo esc_html( $trip['summary'] ); ?></p>
+							<?php endif; ?>
+						</div>
+
+						<div class="hw-hub__trip-cols">
+							<?php if ( $trip['doing'] ) : ?>
+								<div>
+									<h4><?php echo esc_html( hw_hub_t( 'What to do' ) ); ?></h4>
+									<ul>
+										<?php foreach ( $trip['doing'] as $item ) : ?>
+											<li><?php echo esc_html( $item ); ?></li>
+										<?php endforeach; ?>
+									</ul>
+								</div>
+							<?php endif; ?>
+
+							<?php if ( $trip['spots'] ) : ?>
+								<div>
+									<h4><?php echo esc_html( hw_hub_t( 'Spots to visit' ) ); ?></h4>
+									<ul>
+										<?php foreach ( $trip['spots'] as $item ) : ?>
+											<li><?php echo esc_html( $item ); ?></li>
+										<?php endforeach; ?>
+									</ul>
+								</div>
+							<?php endif; ?>
+
+							<?php if ( $trip['cities'] ) : ?>
+								<div>
+									<h4><?php echo esc_html( hw_hub_t( 'Best cities for it' ) ); ?></h4>
+									<ul class="hw-hub__trip-cities">
+										<?php foreach ( $trip['cities'] as $city_name ) : ?>
+											<?php $trip_city_url = hw_hub_country_url( $city_name ); ?>
+											<li>
+												<?php if ( $trip_city_url ) : ?>
+													<a href="<?php echo esc_url( $trip_city_url ); ?>"><?php echo esc_html( $city_name ); ?></a>
+												<?php else : ?>
+													<?php echo esc_html( $city_name ); ?>
+												<?php endif; ?>
+											</li>
+										<?php endforeach; ?>
+									</ul>
+								</div>
+							<?php endif; ?>
+						</div>
+
+						<?php
+						if ( $trip['tag'] ) {
+							hw_hub_render_carousel(
+								array(
+									'expression' => hw_hub_row_expression( $hub, $trip['tag'] ),
+									'label'      => sprintf(
+										/* translators: 1: trip type, 2: country */
+										hw_hub_t( 'Reading on %1$s in %2$s' ),
+										strtolower( $trip['name'] ),
+										$hub_label
+									),
+									'more'       => hw_hub_t( 'See all' ),
+									'can_edit'   => $can_edit,
+									'compact'    => true,
+								)
+							);
+						}
+						?>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</section>
+	<?php endif; ?>
+
+	<?php /* ---------- The content sections, each with its own carousel ---------- */ ?>
+	<?php foreach ( $hub['sections'] as $index => $section ) : ?>
+		<section id="<?php echo esc_attr( $section['key'] ); ?>" class="hw-hub__block hw-hub__block--<?php echo 0 === $index % 2 ? 'light' : 'tint'; ?> hw-hub__block--<?php echo esc_attr( $section['colour'] ); ?>">
+			<div class="hw-hub__wrap">
+				<div class="hw-hub__block-grid">
+					<div class="hw-hub__block-copy">
+						<div class="hw-hub__block-badge">
+							<?php echo hw_hub_icon( $section['icon'], 22 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+							<span><?php echo esc_html( $section['nav'] ); ?></span>
+						</div>
+						<h2><?php echo esc_html( $section['title'] ); ?></h2>
+						<?php foreach ( $section['body'] as $para ) : ?>
+							<p><?php echo esc_html( $para ); ?></p>
+						<?php endforeach; ?>
+					</div>
+
+					<?php if ( $section['points'] || $section['art'] ) : ?>
+						<aside class="hw-hub__points">
+							<?php if ( $section['art'] ) : ?>
+								<div class="hw-hub__points-art">
+									<?php echo hw_hub_illustration( $section['art'], '' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+								</div>
+							<?php endif; ?>
+							<?php foreach ( $section['points'] as $point ) : ?>
+								<div class="hw-hub__point">
+									<div class="hw-hub__point-label"><?php echo esc_html( $point['label'] ); ?></div>
+									<div class="hw-hub__point-detail"><?php echo esc_html( $point['detail'] ); ?></div>
+								</div>
+							<?php endforeach; ?>
+						</aside>
+					<?php endif; ?>
+				</div>
+
+				<?php
+				if ( $section['tag'] ) {
+					hw_hub_render_carousel(
+						array(
+							'expression' => hw_hub_row_expression( $hub, $section['tag'] ),
+							'label'      => sprintf(
+								/* translators: 1: section heading, 2: country */
+								hw_hub_t( 'More on %1$s in %2$s' ),
+								strtolower( $section['nav'] ),
+								$hub_label
+							),
+							'more'       => $section['more'],
+							'can_edit'   => $can_edit,
+						)
+					);
+				}
+				?>
+			</div>
+		</section>
+	<?php endforeach; ?>
+
+	<?php /* ---------- When to go ---------- */ ?>
+	<?php if ( $hub['season_rows'] ) : ?>
+		<section id="season" class="hw-hub__season-strip">
+			<div class="hw-hub__wrap">
+				<h2><?php echo esc_html( $hub['season_title'] ); ?></h2>
+				<p class="hw-hub__lede"><?php echo esc_html( $hub['season_intro'] ); ?></p>
+
+				<div class="hw-hub__months" role="list">
+					<?php
+					$temps = array_map( 'intval', wp_list_pluck( $hub['season_rows'], 'high' ) );
+					$max   = $temps ? max( $temps ) : 1;
+					$min   = $temps ? min( $temps ) : 0;
+					$span  = max( 1, $max - $min );
+					?>
+					<?php foreach ( $hub['season_rows'] as $month ) : ?>
+						<?php
+						$high   = (int) $month['high'];
+						$crowd  = max( 1, min( 5, (int) $month['crowd'] ) );
+						$height = 30 + round( ( ( $high - $min ) / $span ) * 70 );
+						?>
+						<div class="hw-hub__month" role="listitem">
+							<div class="hw-hub__month-bar-wrap">
+								<span class="hw-hub__month-temp"><?php echo esc_html( $high ); ?>°</span>
+								<div class="hw-hub__month-bar hw-hub__month-bar--<?php echo esc_attr( $crowd ); ?>" style="height: <?php echo esc_attr( $height ); ?>%"></div>
+							</div>
+							<div class="hw-hub__month-name"><?php echo esc_html( substr( $month['month'], 0, 3 ) ); ?></div>
+							<div class="hw-hub__month-note"><?php echo esc_html( $month['note'] ); ?></div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+
+				<div class="hw-hub__months-key">
+					<span><?php echo esc_html( hw_hub_t( 'Bar height is temperature. Colour is how busy it gets:' ) ); ?></span>
+					<span class="hw-hub__key-swatch hw-hub__key-swatch--1"></span><span><?php echo esc_html( hw_hub_t( 'quiet' ) ); ?></span>
+					<span class="hw-hub__key-swatch hw-hub__key-swatch--3"></span><span><?php echo esc_html( hw_hub_t( 'busy' ) ); ?></span>
+					<span class="hw-hub__key-swatch hw-hub__key-swatch--5"></span><span><?php echo esc_html( hw_hub_t( 'peak' ) ); ?></span>
+				</div>
+
+				<?php if ( $hub['season_note'] ) : ?>
+					<p class="hw-hub__note"><?php echo esc_html( $hub['season_note'] ); ?></p>
+				<?php endif; ?>
+			</div>
+		</section>
+	<?php endif; ?>
+
+	<?php /* ---------- Budget calculator ---------- */ ?>
+	<?php if ( $hub['budget_rows'] ) : ?>
+		<section id="budget" class="hw-hub__budget">
+			<div class="hw-hub__wrap">
+				<div class="hw-hub__budget-grid">
+					<div>
+						<h2><?php echo esc_html( $hub['budget_title'] ); ?></h2>
+						<p><?php echo esc_html( $hub['budget_intro'] ); ?></p>
+						<?php if ( $hub['budget_note'] ) : ?>
+							<p class="hw-hub__note"><?php echo esc_html( $hub['budget_note'] ); ?></p>
+						<?php endif; ?>
+					</div>
+
+					<div class="hw-hub__calc" data-hw-calc data-currency="<?php echo esc_attr( $hub['budget_currency'] ); ?>">
+						<div class="hw-hub__calc-styles">
+							<?php foreach ( $hub['budget_rows'] as $i => $style ) : ?>
+								<button
+									type="button"
+									class="hw-hub__calc-style<?php echo 0 === $i ? ' is-active' : ''; ?>"
+									data-bed="<?php echo esc_attr( (float) $style['bed'] ); ?>"
+									data-food="<?php echo esc_attr( (float) $style['food'] ); ?>"
+									data-transport="<?php echo esc_attr( (float) $style['transport'] ); ?>"
+									data-doing="<?php echo esc_attr( (float) $style['doing'] ); ?>"
+								><?php echo esc_html( $style['style'] ); ?></button>
+							<?php endforeach; ?>
+						</div>
+
+						<label class="hw-hub__calc-nights">
+							<span><?php echo esc_html( hw_hub_t( 'Nights' ) ); ?></span>
+							<input type="range" min="1" max="30" value="7" data-hw-nights>
+							<output data-hw-nights-out>7</output>
+						</label>
+
+						<div class="hw-hub__calc-total">
+							<div class="hw-hub__calc-figure" data-hw-total>—</div>
+							<div class="hw-hub__calc-per" data-hw-per></div>
+						</div>
+
+						<ul class="hw-hub__calc-breakdown">
+							<li><span><?php echo esc_html( hw_hub_t( 'Beds' ) ); ?></span><span data-hw-line="bed">—</span></li>
+							<li><span><?php echo esc_html( hw_hub_t( 'Food and drink' ) ); ?></span><span data-hw-line="food">—</span></li>
+							<li><span><?php echo esc_html( hw_hub_t( 'Getting around' ) ); ?></span><span data-hw-line="transport">—</span></li>
+							<li><span><?php echo esc_html( hw_hub_t( 'Doing things' ) ); ?></span><span data-hw-line="doing">—</span></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</section>
+	<?php endif; ?>
+
+	<?php /* ---------- What's on ---------- */ ?>
+	<?php
+	$live_events = ( 'manual' === $hub['events_source'] ) ? array() : hw_hub_api_events( $hub['events_api'] );
+	$events_cta  = hw_hub_url( $hub['events_cta']['href'] );
+	?>
+	<?php if ( $live_events || $hub['events'] ) : ?>
+		<section id="events" class="hw-hub__events-country">
+			<div class="hw-hub__wrap">
+				<div class="hw-hub__events-head">
+					<div>
+						<div class="hw-hub__eyebrow"><?php echo esc_html( hw_hub_t( "What's on" ) ); ?></div>
+						<h2><?php echo esc_html( $hub['events_title'] ); ?></h2>
+						<p><?php echo esc_html( $hub['events_intro'] ); ?></p>
+					</div>
+
+					<div class="hw-hub__carousel-nav">
+						<button type="button" class="hw-hub__carousel-btn" data-direction="prev" aria-label="<?php echo esc_attr( hw_hub_t( 'Previous events' ) ); ?>">
+							<?php echo hw_hub_icon( 'arrow-left', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						</button>
+						<button type="button" class="hw-hub__carousel-btn" data-direction="next" aria-label="<?php echo esc_attr( hw_hub_t( 'More events' ) ); ?>">
+							<?php echo hw_hub_icon( 'arrow-right', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						</button>
+					</div>
+				</div>
+
+				<div class="hw-hub__carousel" data-hw-carousel>
+					<?php if ( $live_events ) : ?>
+						<?php foreach ( $live_events as $event ) : ?>
+							<div class="hw-hub__event-card">
+								<div class="hw-hub__event-photo">
+									<?php if ( $event['image'] ) : ?>
+										<img src="<?php echo esc_url( $event['image'] ); ?>" alt="<?php echo esc_attr( $event['name'] ); ?>" loading="lazy">
+									<?php endif; ?>
+									<?php if ( $event['pick'] ) : ?>
+										<span class="hw-hub__event-pick"><?php echo esc_html( hw_hub_t( 'Staff pick' ) ); ?></span>
+									<?php endif; ?>
+								</div>
+								<div class="hw-hub__event-body">
+									<div class="hw-hub__event-when"><?php echo esc_html( hw_hub_event_dates( $event['start'], $event['end'] ) ); ?></div>
+									<h3><?php echo esc_html( $event['name'] ); ?></h3>
+									<?php if ( $event['city'] ) : ?>
+										<div class="hw-hub__event-place">
+											<?php echo hw_hub_icon( 'map-pin', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+											<span><?php echo esc_html( $event['city'] ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( $event['blurb'] ) : ?>
+										<p><?php echo esc_html( $event['blurb'] ); ?></p>
+									<?php endif; ?>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					<?php else : ?>
+						<?php foreach ( $hub['events'] as $event ) : ?>
+							<?php $event_url = hw_hub_url( $event['href'] ); ?>
+							<?php $event_photo = hw_hub_image( $event['image'], $event['name'], 'medium_large' ); ?>
+							<?php echo hw_hub_link_open( $event_url, 'hw-hub__event-card' . ( $event_photo ? '' : ' hw-hub__event-card--text' ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+								<?php if ( $event_photo ) : ?>
+								<div class="hw-hub__event-photo"><?php echo $event_photo; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+							<?php else : ?>
+								<div class="hw-hub__event-badge" aria-hidden="true"><?php echo hw_hub_icon( 'calendar', 20 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+							<?php endif; ?>
+								<div class="hw-hub__event-body">
+									<div class="hw-hub__event-when"><?php echo esc_html( $event['dates'] ); ?></div>
+									<h3><?php echo esc_html( $event['name'] ); ?></h3>
+									<?php if ( $event['place'] ) : ?>
+										<div class="hw-hub__event-place">
+											<?php echo hw_hub_icon( 'map-pin', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+											<span><?php echo esc_html( $event['place'] ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( $event['blurb'] ) : ?>
+										<p><?php echo esc_html( $event['blurb'] ); ?></p>
+									<?php endif; ?>
+								</div>
+							<?php echo hw_hub_link_close( $event_url ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</div>
+
+				<?php if ( $events_cta ) : ?>
+					<div class="hw-hub__hostels-cta">
+						<a class="hw-hub__btn" href="<?php echo esc_url( $events_cta ); ?>" rel="noopener">
+							<?php echo esc_html( $hub['events_cta']['label'] ); ?>
+							<?php echo hw_hub_icon( 'arrow-right', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						</a>
+					</div>
+				<?php endif; ?>
+			</div>
+		</section>
+	<?php endif; ?>
+
+	<?php /* ---------- Hostels ---------- */ ?>
+	<?php if ( $live || $hub['hostels'] || $can_edit ) : ?>
+		<section id="hostels" class="hw-hub__hostels">
+			<div class="hw-hub__wrap">
+				<div class="hw-hub__hostels-head">
+					<div>
+						<div class="hw-hub__eyebrow"><?php echo esc_html( hw_hub_t( 'Hostels' ) ); ?></div>
+						<h2><?php echo esc_html( $hub['hostels_title'] ); ?></h2>
+						<p><?php echo esc_html( $hub['hostels_intro'] ); ?></p>
+					</div>
+
+					<div class="hw-hub__carousel-nav">
+						<button type="button" class="hw-hub__carousel-btn" data-direction="prev" aria-label="<?php echo esc_attr( hw_hub_t( 'Previous hostels' ) ); ?>">
+							<?php echo hw_hub_icon( 'arrow-left', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						</button>
+						<button type="button" class="hw-hub__carousel-btn" data-direction="next" aria-label="<?php echo esc_attr( hw_hub_t( 'More hostels' ) ); ?>">
+							<?php echo hw_hub_icon( 'arrow-right', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						</button>
+					</div>
+				</div>
+
+				<?php if ( ! $live && ! $hub['hostels'] ) : ?>
+					<div class="hw-hub__empty">
+						<?php echo hw_hub_illustration( 'search-map', '' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<?php echo esc_html( hw_hub_t( 'Only you can see this. The live feed returned nothing — check the Location ID under Hostels.' ) ); ?>
+					</div>
+				<?php endif; ?>
+
+				<div class="hw-hub__carousel" data-hw-carousel>
+					<?php if ( $live ) : ?>
+						<?php foreach ( $live as $hostel ) : ?>
+							<?php $price = hw_hub_price_label( $hostel['price'] ); ?>
+							<?php echo hw_hub_link_open( $hostel['url'], 'hw-hub__hostel', 'rel="noopener"' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+								<div class="hw-hub__hostel-photo">
+									<?php if ( $hostel['image'] ) : ?>
+										<img src="<?php echo esc_url( $hostel['image'] ); ?>" alt="<?php echo esc_attr( $hostel['name'] ); ?>" loading="lazy">
+									<?php endif; ?>
+									<?php if ( ! empty( $hostel['eco'] ) ) : ?>
+										<span class="hw-hub__hostel-eco" title="<?php echo esc_attr( $hostel['eco'] ); ?>">
+											<?php echo hw_hub_icon( 'checkmark', 12 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+											<?php echo esc_html( hw_hub_t( 'Sustainable' ) ); ?>
+										</span>
+									<?php endif; ?>
+									<?php if ( $hostel['rating'] ) : ?>
+										<span class="hw-hub__hostel-rating">
+											<?php echo hw_hub_icon( 'star', 13 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+											<strong><?php echo esc_html( number_format_i18n( $hostel['rating'], 1 ) ); ?></strong>
+											<span><?php echo esc_html( number_format_i18n( $hostel['reviews'] ) ); ?></span>
+										</span>
+									<?php endif; ?>
+								</div>
+								<div class="hw-hub__hostel-body">
+									<h3><?php echo esc_html( $hostel['name'] ); ?></h3>
+									<div class="hw-hub__hostel-place">
+										<?php echo hw_hub_icon( 'map-pin', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+										<span><?php echo esc_html( $hostel['city'] ); ?></span>
+									</div>
+									<?php if ( $price ) : ?>
+										<div class="hw-hub__hostel-price">
+											<?php
+											printf(
+												/* translators: %s: price with currency symbol */
+												esc_html( $hostel['dorm'] ? hw_hub_t( 'Dorms from %s a night' ) : hw_hub_t( 'Rooms from %s a night' ) ),
+												'<strong>' . esc_html( $price ) . '</strong>'
+											);
+											?>
+										</div>
+									<?php endif; ?>
+									<span class="hw-hub__hostel-link">
+										<?php echo esc_html( hw_hub_t( 'See dates and book' ) ); ?>
+										<?php echo hw_hub_icon( 'arrow-right', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+									</span>
+								</div>
+							<?php echo hw_hub_link_close( $hostel['url'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<?php endforeach; ?>
+					<?php else : ?>
+						<?php foreach ( $hub['hostels'] as $hostel ) : ?>
+							<?php $hostel_url = hw_hub_url( $hostel['href'] ); ?>
+							<?php echo hw_hub_link_open( $hostel_url, 'hw-hub__hostel', $hostel_url ? 'rel="noopener"' : '' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+								<div class="hw-hub__hostel-photo"><?php echo hw_hub_image( $hostel['image'], $hostel['name'], 'medium_large' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+								<div class="hw-hub__hostel-body">
+									<h3><?php echo esc_html( $hostel['name'] ); ?></h3>
+									<?php if ( $hostel['place'] ) : ?>
+										<div class="hw-hub__hostel-place">
+											<?php echo hw_hub_icon( 'map-pin', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+											<span><?php echo esc_html( $hostel['place'] ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( $hostel['note'] ) : ?>
+										<p><?php echo esc_html( $hostel['note'] ); ?></p>
+									<?php endif; ?>
+								</div>
+							<?php echo hw_hub_link_close( $hostel_url ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</div>
+
+				<?php $hostels_cta_url = hw_hub_url( $hub['hostels_cta']['href'] ); ?>
+				<?php if ( $hostels_cta_url ) : ?>
+					<div class="hw-hub__hostels-cta">
+						<a class="hw-hub__btn" href="<?php echo esc_url( $hostels_cta_url ); ?>" rel="noopener">
+							<?php echo esc_html( $hub['hostels_cta']['label'] ); ?>
+							<?php echo hw_hub_icon( 'arrow-right', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						</a>
+					</div>
+				<?php endif; ?>
+			</div>
+		</section>
+	<?php endif; ?>
+
+	<?php /* ---------- FAQs ---------- */ ?>
+	<section id="faqs" class="hw-hub__faqs">
+		<div class="hw-hub__wrap">
+			<div class="hw-hub__faq-head">
+				<div>
+					<h2><?php echo esc_html( $hub['faq_title'] ); ?></h2>
+					<p class="hw-hub__lede"><?php echo esc_html( $hub['faq_note'] ); ?></p>
+				</div>
+				<div class="hw-hub__faq-art">
+					<?php echo hw_hub_illustration( 'question', '' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</div>
+			</div>
+
+			<div class="hw-hub__faq-list">
+				<?php foreach ( $hub['faqs'] as $faq ) : ?>
+					<details class="hw-hub__faq">
+						<summary>
+							<span><?php echo esc_html( $faq['q'] ); ?></span>
+							<span class="hw-hub__faq-plus" aria-hidden="true">+</span>
+						</summary>
+						<div class="hw-hub__faq-answer"><?php echo esc_html( $faq['a'] ); ?></div>
+					</details>
+				<?php endforeach; ?>
+			</div>
+		</div>
+	</section>
+
+	<?php /* ---------- Closing CTA ---------- */ ?>
+	<div class="hw-hub__cta">
+		<div class="hw-hub__wrap">
+			<div class="hw-hub__cta-inner">
+				<div>
+					<h2><?php echo esc_html( $hub['cta_title'] ); ?></h2>
+					<p><?php echo esc_html( $hub['cta_body'] ); ?></p>
+					<div class="hw-hub__cta-actions">
+						<?php foreach ( $hub['cta_buttons'] as $i => $button ) : ?>
+							<?php $button_url = hw_hub_url( $button['href'] ); ?>
+							<?php if ( $button_url ) : ?>
+								<a class="hw-hub__btn <?php echo 0 === $i ? 'hw-hub__btn--light' : 'hw-hub__btn--ghost'; ?>" href="<?php echo esc_url( $button_url ); ?>"><?php echo esc_html( $button['label'] ); ?></a>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					</div>
+				</div>
+
+				<?php if ( empty( $hub['newsletter']['shortcode'] ) ) : ?>
+					<div class="hw-hub__cta-art">
+						<?php echo hw_hub_illustration( 'backpacker', '' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+				<?php else : ?>
+					<div class="hw-hub__newsletter">
+						<div class="hw-hub__newsletter-title"><?php echo esc_html( $hub['newsletter']['title'] ); ?></div>
+						<p><?php echo esc_html( $hub['newsletter']['body'] ); ?></p>
+						<?php echo do_shortcode( $hub['newsletter']['shortcode'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+				<?php endif; ?>
+			</div>
+		</div>
+	</div>
+
+</main>
+
+<?php
+/* ---------- Structured data: FAQPage ---------- */
+
+$faq_schema = array(
+	'@context'   => 'https://schema.org',
+	'@type'      => 'FAQPage',
+	'mainEntity' => array(),
+);
+
+foreach ( $hub['faqs'] as $faq ) {
+	$faq_schema['mainEntity'][] = array(
+		'@type'          => 'Question',
+		'name'           => $faq['q'],
+		'acceptedAnswer' => array(
+			'@type' => 'Answer',
+			'text'  => $faq['a'],
+		),
+	);
+}
+?>
+<script type="application/ld+json"><?php echo wp_json_encode( $faq_schema ); ?></script>
+
+<?php
+hw_hub_site_footer();
