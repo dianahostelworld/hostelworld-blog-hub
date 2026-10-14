@@ -412,6 +412,17 @@ function hw_hub_import_apply( $post_id, $values ) {
 		if ( 'check' === $type ) {
 			$truthy = array( '1', 'yes', 'y', 'true', 'on', 'x', 'tick', 'ticked', 'checked' );
 			$clean  = in_array( strtolower( trim( $value ) ), $truthy, true ) ? '1' : '';
+		} elseif ( 'checks' === $type ) {
+			// Labels or slugs, comma or semicolon separated. If anything in the
+			// cell is not recognised the field is left alone, so a typo never
+			// quietly drops a type that was already ticked.
+			$parsed = hw_hub_parse_checks( sanitize_text_field( $value ), isset( $field['options'] ) ? $field['options'] : array() );
+
+			if ( $parsed['unknown'] ) {
+				continue;
+			}
+
+			$clean = implode( ',', $parsed['values'] );
 		} elseif ( 'select' === $type ) {
 			$options = isset( $field['options'] ) ? $field['options'] : array();
 			$raw     = trim( $value );

@@ -870,3 +870,74 @@ div.hw-hub__country { opacity: 0.62; } /* nowhere to link at all — rare */
 @media (max-width: 640px) {
 	.hw-hub__map--wide { height: 280px; }
 }
+
+/* ---------- Postcard maker ---------- */
+.hw-hub button.hw-hub__postcard-btn { position: absolute; right: 24px; bottom: 24px; z-index: 5; display: inline-flex; align-items: center; gap: 10px; margin: 0; padding: 14px 24px; border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 999px; background: rgba(18, 20, 23, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; font: 600 16px/1.2 var(--hw-font-body); cursor: pointer; text-shadow: none; box-shadow: none; }
+.hw-hub button.hw-hub__postcard-btn:hover, .hw-hub button.hw-hub__postcard-btn:focus-visible { background: #fff; color: var(--hw-ink-darker); }
+
+.hw-pc { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(18, 20, 23, 0.72); font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #121417; }
+.hw-pc[hidden] { display: none; }
+.hw-pc *, .hw-pc *::before, .hw-pc *::after { box-sizing: border-box; }
+.hw-pc__box { position: relative; width: 100%; max-width: 820px; max-height: calc(100vh - 40px); overflow-y: auto; background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); }
+.hw-pc__title { margin: 0 44px 16px 0; font: 700 22px/1.25 "Poppins", ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.02em; color: #121417; }
+.hw-pc button.hw-pc__close { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: #F1F2F4; color: #121417; font-size: 22px; line-height: 36px; text-align: center; cursor: pointer; }
+.hw-pc button.hw-pc__close:hover { background: #DDDFE4; }
+.hw-pc__preview { position: relative; border-radius: 10px; overflow: hidden; background: #F1F2F4; aspect-ratio: 3 / 2; }
+.hw-pc__preview canvas { display: block; width: 100%; height: 100%; }
+.hw-pc__status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; color: #636C7D; font-size: 15px; }
+.hw-pc__status[hidden] { display: none; }
+.hw-pc__label { display: block; margin: 18px 0 6px; font-weight: 700; font-size: 14px; color: #31363F; }
+.hw-pc textarea.hw-pc__msg { display: block; width: 100%; min-height: 84px; margin: 0; padding: 12px 14px; border: 1px solid #DDDFE4; border-radius: 12px; background: #fff; color: #121417; font: 400 16px/1.45 inherit; font-family: inherit; resize: vertical; box-shadow: none; }
+.hw-pc textarea.hw-pc__msg:focus { outline: 2px solid #F25621; outline-offset: 1px; border-color: #F25621; }
+.hw-pc__count { margin-top: 4px; text-align: right; font-size: 12px; color: #A9AFBB; }
+.hw-pc__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.hw-pc button.hw-pc__btn { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 13px 24px; border: 0; border-radius: 999px; background: #F25621; color: #fff; font: 600 15px/1.2 inherit; font-family: inherit; cursor: pointer; box-shadow: none; text-transform: none; letter-spacing: 0; }
+.hw-pc button.hw-pc__btn:hover { background: #CA3B0C; }
+.hw-pc button.hw-pc__btn--ghost { background: #fff; color: #121417; border: 1px solid #DDDFE4; padding: 12px 23px; }
+.hw-pc button.hw-pc__btn--ghost:hover { background: #F1F2F4; }
+.hw-pc button.hw-pc__btn:disabled { opacity: 0.5; cursor: default; }
+.hw-pc__note { margin: 14px 0 0; font-size: 13px; color: #636C7D; }
+html.hw-pc-open { overflow: hidden; }
+
+@media (max-width: 640px) {
+	.hw-hub button.hw-hub__postcard-btn { top: 16px; right: 16px; bottom: auto; padding: 11px 13px; font-size: 14px; }
+	.hw-hub button.hw-hub__postcard-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	.hw-pc { padding: 0; align-items: flex-end; }
+	.hw-pc__box { max-height: 100vh; border-radius: 20px 20px 0 0; padding: 20px 16px 24px; }
+	.hw-pc__title { font-size: 19px; }
+	.hw-pc__actions .hw-pc__btn { flex: 1 1 0; justify-content: center; }
+}
+
+/* ---------- From the Hostelworld team ---------- */
+.hw-hub section.hw-hub__team { background: var(--hw-orange-lightest); }
+.hw-hub__team h2 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.08; margin-bottom: 12px; }
+.hw-hub p.hw-hub__team-intro { max-width: 720px; margin: 0 0 8px; color: var(--hw-ink-dark); font-size: 18px; }
+.hw-hub__team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px 24px; margin-top: 64px; align-items: stretch; }
+.hw-hub figure.hw-hub__team-card { position: relative; margin: 0; padding: 72px 28px 28px; background: #fff; border-radius: 22px; box-shadow: 0 6px 24px rgba(202, 59, 12, 0.08); text-align: center; }
+.hw-hub figure.hw-hub__team-card--nophoto { padding-top: 32px; margin-top: 0; }
+.hw-hub__team-card::after { content: "\201D"; position: absolute; right: 22px; bottom: -6px; font: 800 96px/1 var(--hw-font-display); color: var(--hw-orange); opacity: 0.18; pointer-events: none; }
+.hw-hub__team-photo { position: absolute; top: -48px; left: 50%; width: 104px; height: 104px; margin-left: -52px; border-radius: 50%; overflow: hidden; border: 5px solid #fff; background: var(--hw-ink-lightest); box-shadow: 0 4px 14px rgba(18, 20, 23, 0.12); }
+.hw-hub__team-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hw-hub p.hw-hub__team-lead { margin: 0 0 10px; color: var(--hw-orange-dark); font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.hw-hub blockquote.hw-hub__team-quote { margin: 0; padding: 0; border: 0; background: none; quotes: none; }
+.hw-hub blockquote.hw-hub__team-quote::before, .hw-hub blockquote.hw-hub__team-quote::after { content: none; }
+.hw-hub blockquote.hw-hub__team-quote p { margin: 0; font-family: var(--hw-font-display); font-weight: 600; font-size: 19px; line-height: 1.45; letter-spacing: -0.01em; color: var(--hw-ink-darker); font-style: normal; }
+.hw-hub figcaption.hw-hub__team-who { margin-top: 18px; display: flex; flex-direction: column; gap: 2px; font-size: 14px; color: var(--hw-ink); }
+.hw-hub figcaption.hw-hub__team-who strong { font-size: 16px; color: var(--hw-ink-darker); }
+
+/* One quote: photo beside it, bigger. */
+.hw-hub__team--solo .hw-hub__team-grid { grid-template-columns: 1fr; margin-top: 36px; }
+.hw-hub__team--solo figure.hw-hub__team-card { display: grid; grid-template-columns: 240px 1fr; gap: 36px; align-items: center; padding: 28px 40px 28px 28px; text-align: left; }
+.hw-hub__team--solo figure.hw-hub__team-card--nophoto { grid-template-columns: 1fr; padding: 36px 40px; }
+.hw-hub__team--solo .hw-hub__team-photo { position: static; width: 240px; height: 280px; margin: 0; border: 0; border-radius: 16px; box-shadow: none; }
+.hw-hub__team--solo blockquote.hw-hub__team-quote p { font-size: clamp(20px, 2.2vw, 26px); }
+
+@media (max-width: 640px) {
+	.hw-hub__team-grid { grid-template-columns: 1fr; gap: 64px; margin-top: 64px; }
+	.hw-hub figure.hw-hub__team-card { padding: 68px 20px 24px; }
+	.hw-hub__team--solo .hw-hub__team-grid { margin-top: 64px; }
+	.hw-hub__team--solo figure.hw-hub__team-card { display: block; padding: 68px 20px 24px; text-align: center; }
+	.hw-hub__team--solo .hw-hub__team-photo { position: absolute; width: 104px; height: 104px; margin-left: -52px; border: 5px solid #fff; border-radius: 50%; box-shadow: 0 4px 14px rgba(18, 20, 23, 0.12); }
+	.hw-hub__team--solo figure.hw-hub__team-card--nophoto { padding-top: 28px; }
+	.hw-hub blockquote.hw-hub__team-quote p { font-size: 18px; }
+}

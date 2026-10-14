@@ -77,6 +77,19 @@
 	font-weight: 400;
 }
 
+.hw-hub-admin__checks {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	gap: 6px 16px;
+	margin: 4px 0;
+}
+
+.hw-hub-admin__checks .hw-hub-admin__check {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
 .hw-hub-admin__preview img {
 	max-width: 240px;
 	height: auto;

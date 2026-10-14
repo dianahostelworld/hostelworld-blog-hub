@@ -240,6 +240,8 @@ function hw_hub_city_schema() {
 			),
 		),
 
+		'team'       => hw_hub_team_section(),
+
 		'faqs'       => array(
 			'label'  => __( 'FAQs', 'hostelworld' ),
 			'fields' => array(
@@ -268,6 +270,7 @@ function hw_hub_city_schema() {
 				'city_slug'    => array( 'label' => 'Hostelworld city name', 'type' => 'text', 'help' => 'As it appears in a Hostelworld URL, e.g. barcelona. Used for the live hostel, district, event and review data.' ),
 				'country_slug' => array( 'label' => 'Hostelworld country name', 'type' => 'text', 'help' => 'e.g. spain. Needed to look the city up.' ),
 				'parent_hub'   => array( 'label' => 'Country hub', 'type' => 'text', 'help' => 'Page path of the country this sits under, e.g. europe/spain.' ),
+				'good_for'     => array( 'label' => 'Good for', 'type' => 'checks', 'options' => hw_hub_trip_types(), 'help' => 'The kinds of trip this city suits. Used by the destination finder, so tick every one that fits, not only the ones the country hub lists it under. Beach means the sea. Lakes & rivers is for lakes and rivers away from the coast: swimming, kayaking, boat trips.' ),
 				'currency'     => array( 'label' => 'Currency code', 'type' => 'text', 'help' => 'Three letters, e.g. EUR. Used for the live prices.' ),
 				'scope_rows'   => array( 'label' => 'Keep carousels inside this city', 'type' => 'check', 'help' => 'On: the city tag is added to every carousel, so a food carousel can only return this city\'s food articles.' ),
 			),

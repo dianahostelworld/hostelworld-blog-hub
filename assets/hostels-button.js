@@ -1,4 +1,4 @@
-/* "Add hostels" in the Classic Editor: pick a city, pick hostels, insert the tag. */
+/* "Add hostels" in the Classic Editor: pick a country (and a city, if you like), pick hostels, insert the tag. */
 (function ($) {
 	'use strict';
 
@@ -20,10 +20,10 @@
 			'<button type="button" class="button-link hw-x" aria-label="Close"><span class="dashicons dashicons-no-alt"></span></button></div>' +
 			'<div class="hw-hostels-dialog__main">' +
 			'<div class="hw-hostels-dialog__row">' +
-			'<label>City<input type="text" class="hw-city" placeholder="lisbon"></label>' +
 			'<label>Country<input type="text" class="hw-country" placeholder="portugal"></label>' +
+			'<label>City (optional)<input type="text" class="hw-city" placeholder="lisbon"></label>' +
 			'<button type="button" class="button hw-find">Find hostels</button></div>' +
-			'<p class="description">As they appear in a Hostelworld web address: hostelworld.com/hostels/europe/<b>portugal</b>/<b>lisbon</b>/</p>' +
+			'<p class="description">As they appear in a Hostelworld web address: hostelworld.com/hostels/europe/<b>portugal</b>/<b>lisbon</b>/. Leave the city empty for the best hostels across the whole country.</p>' +
 			'<p class="hw-hostels-dialog__msg"></p>' +
 			'<div class="hw-pick" hidden>' +
 			'<div class="hw-hostels-dialog__row">' +
@@ -67,6 +67,7 @@
 		var city = $.trim($dlg.find('.hw-city').val()).toLowerCase();
 		var country = $.trim($dlg.find('.hw-country').val()).toLowerCase();
 		$dlg.find('.hw-pick').prop('hidden', true);
+		$dlg.data('found', false);
 		$dlg.find('.hw-insert').prop('disabled', true);
 		$dlg.find('.hw-preview').text('');
 		msg('Looking up hostels…');
@@ -88,9 +89,11 @@
 						(h.price ? ' · from ' + esc(h.price) : '') + '</span></label>';
 				});
 				$dlg.find('.hw-list').html(html);
-				$dlg.data('city', city).data('country', country);
+				$dlg.data('city', city).data('country', r.data.country || country).data('found', true);
 				var nh = $.grep(r.data.hostels, function (h) { return !h.type; }).length;
-				msg(r.data.hostels.length + ' places to stay in ' + r.data.city + ' (' + nh + ' hostels), best rated first. Top-rated picks hostels first.');
+				msg(city
+					? r.data.hostels.length + ' places to stay in ' + r.data.city + ' (' + nh + ' hostels), best rated first. Top-rated picks hostels first.'
+					: r.data.hostels.length + ' places to stay across ' + r.data.city + ', from its most popular cities. Top-rated mixes the cities, one at a time.');
 				$dlg.find('.hw-pick').prop('hidden', false);
 				preview();
 			})
@@ -98,9 +101,9 @@
 	}
 
 	function tag() {
+		if (!$dlg.data('found')) { return ''; }
 		var city = $dlg.data('city');
-		if (!city) { return ''; }
-		var out = '[hw_hostels city="' + city + '" country="' + $dlg.data('country') + '"';
+		var out = '[hw_hostels ' + (city ? 'city="' + city + '" ' : '') + 'country="' + $dlg.data('country') + '"';
 		if ($dlg.find('input[name=hw-mode]:checked').val() === 'pick') {
 			var ids = $dlg.find('.hw-list input:checked').map(function () { return this.value; }).get();
 			if (!ids.length) { return ''; }
@@ -130,7 +133,7 @@
 	function open() {
 		if (!$dlg) { build(); }
 		$dlg.prop('hidden', false);
-		$dlg.find($dlg.find('.hw-city').val() ? '.hw-find' : '.hw-city').trigger('focus');
+		$dlg.find($dlg.find('.hw-country').val() ? '.hw-find' : '.hw-country').trigger('focus');
 	}
 
 	function close() {

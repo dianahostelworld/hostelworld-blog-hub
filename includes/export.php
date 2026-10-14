@@ -244,6 +244,12 @@ function hw_hub_export_sheets( $post_id ) {
 				$help  = 'yes or no. ' . $help;
 			}
 
+			if ( isset( $field['type'] ) && 'checks' === $field['type'] && ! empty( $field['options'] ) ) {
+				$parsed = hw_hub_parse_checks( $value, $field['options'] );
+				$value  = implode( ', ', hw_hub_check_labels( $parsed['values'], $field['options'] ) );
+				$help   = 'Any of, separated by commas: ' . implode( ', ', $field['options'] ) . '. ' . $help;
+			}
+
 			$fields_rows[] = array(
 				$section['label'],
 				isset( $field['label'] ) ? $field['label'] : $key,

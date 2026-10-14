@@ -58,6 +58,7 @@ if ( have_posts() ) {
 		<?php if ( $hero_markup ) : ?>
 			<div class="hw-hub__hero-bg"><?php echo $hero_markup; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<div class="hw-hub__hero-veil" aria-hidden="true"></div>
+			<?php hw_hub_postcard_button( $hub['hero_image'], $hub_label ); ?>
 		<?php endif; ?>
 
 		<div class="hw-hub__wrap hw-hub__hero-inner">
@@ -736,6 +737,9 @@ if ( have_posts() ) {
 			</div>
 		</div>
 	</section>
+
+	<?php /* ---------- Also trending this week ---------- */ ?>
+	<?php hw_hub_trending_strip(); ?>
 
 	<?php /* ---------- Closing CTA ---------- */ ?>
 	<div class="hw-hub__cta">

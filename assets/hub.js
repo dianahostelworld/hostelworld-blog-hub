@@ -429,3 +429,555 @@
 		}
 	} );
 }() );
+
+/**
+ * Postcard maker.
+ *
+ * The "Make a postcard" button on a hub's main photo opens a small window
+ * where the reader writes a message. The postcard is drawn in the browser:
+ * nothing is sent to the blog, and it can be downloaded or, on phones,
+ * shared straight to an app.
+ */
+( function () {
+	'use strict';
+
+	var W = 1500;
+	var H = 1000;
+	var FONTS_URL = 'https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Poppins:wght@700;800&display=swap';
+	var MAX = 160;
+
+	var modal, canvas, ctx, field, count, status, shareBtn, downloadBtn, opener, data;
+	var photo = null;
+	var logo = null;
+	var queued = false;
+
+	function el( tag, cls, text ) {
+		var node = document.createElement( tag );
+		if ( cls ) {
+			node.className = cls;
+		}
+		if ( text ) {
+			node.textContent = text;
+		}
+		return node;
+	}
+
+	function loadFonts() {
+		if ( ! document.getElementById( 'hw-pc-fonts' ) ) {
+			var link = document.createElement( 'link' );
+			link.id = 'hw-pc-fonts';
+			link.rel = 'stylesheet';
+			link.href = FONTS_URL;
+			document.head.appendChild( link );
+		}
+
+		if ( ! document.fonts || ! document.fonts.load ) {
+			return Promise.resolve();
+		}
+
+		var wanted = Promise.all( [
+			document.fonts.load( '600 60px Caveat' ),
+			document.fonts.load( '800 120px Poppins' ),
+			document.fonts.load( '700 24px Poppins' )
+		] ).catch( function () {} );
+
+		return Promise.race( [ wanted, new Promise( function ( resolve ) { setTimeout( resolve, 2500 ); } ) ] );
+	}
+
+	function loadImage( src ) {
+		return new Promise( function ( resolve, reject ) {
+			if ( ! src ) {
+				reject();
+				return;
+			}
+			var img = new Image();
+			img.onload = function () { resolve( img ); };
+			img.onerror = reject;
+			img.src = src;
+		} );
+	}
+
+	function slug( text ) {
+		return String( text ).toLowerCase().normalize( 'NFD' ).replace( /[̀-ͯ]/g, '' ).replace( /[^a-z0-9]+/g, '-' ).replace( /^-|-$/g, '' ) || 'postcard';
+	}
+
+	function wrap( text, maxWidth ) {
+		var lines = [];
+		String( text ).split( /\n/ ).forEach( function ( para ) {
+			var words = para.split( /\s+/ ).filter( Boolean );
+			var line = '';
+			if ( ! words.length ) {
+				lines.push( '' );
+				return;
+			}
+			words.forEach( function ( word ) {
+				var test = line ? line + ' ' + word : word;
+				if ( ctx.measureText( test ).width > maxWidth && line ) {
+					lines.push( line );
+					line = word;
+				} else {
+					line = test;
+				}
+			} );
+			lines.push( line );
+		} );
+		return lines;
+	}
+
+	function roundRect( x, y, w, h, r ) {
+		ctx.beginPath();
+		ctx.moveTo( x + r, y );
+		ctx.arcTo( x + w, y, x + w, y + h, r );
+		ctx.arcTo( x + w, y + h, x, y + h, r );
+		ctx.arcTo( x, y + h, x, y, r );
+		ctx.arcTo( x, y, x + w, y, r );
+		ctx.closePath();
+	}
+
+	function drawStamp() {
+		var x = 1300, y = 70, w = 140, h = 170, m = 16;
+
+		// Drawn on its own small canvas first, so the perforated edge cuts
+		// the stamp only, not the photo underneath.
+		var off = document.createElement( 'canvas' );
+		off.width = w;
+		off.height = h;
+		var main = ctx;
+		ctx = off.getContext( '2d' );
+
+		ctx.fillStyle = '#FFFFFF';
+		ctx.fillRect( 0, 0, w, h );
+		ctx.globalCompositeOperation = 'destination-out';
+		for ( var i = 0; i <= w; i += 14 ) {
+			ctx.beginPath(); ctx.arc( i, 0, 5, 0, Math.PI * 2 ); ctx.fill();
+			ctx.beginPath(); ctx.arc( i, h, 5, 0, Math.PI * 2 ); ctx.fill();
+		}
+		for ( var j = 0; j <= h; j += 14 ) {
+			ctx.beginPath(); ctx.arc( 0, j, 5, 0, Math.PI * 2 ); ctx.fill();
+			ctx.beginPath(); ctx.arc( w, j, 5, 0, Math.PI * 2 ); ctx.fill();
+		}
+		ctx.globalCompositeOperation = 'source-over';
+
+		// Inside: the photo itself, small, as stamps often are.
+		var ix = 14, iy = 14, iw = w - 28, ih = h - 52;
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect( ix, iy, iw, ih );
+		ctx.clip();
+		cover( photo, ix, iy, iw, ih );
+		ctx.restore();
+
+		ctx.fillStyle = '#F25621';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'alphabetic';
+		var name = fitText( data.place.toUpperCase(), iw, 15, '700', 'Poppins, sans-serif' );
+		ctx.fillText( name, w / 2, h - 18 );
+
+		ctx = main;
+		ctx.save();
+		ctx.translate( x + w / 2, y + h / 2 );
+		ctx.rotate( 0.04 );
+		ctx.shadowColor = 'rgba(0,0,0,0.3)';
+		ctx.shadowBlur = m;
+		ctx.drawImage( off, -w / 2, -h / 2 );
+		ctx.restore();
+
+		// Postmark over the corner of the stamp.
+		var cx = 1222, cy = 205, r = 58;
+		ctx.save();
+		ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+		ctx.fillStyle = 'rgba(255,255,255,0.85)';
+		ctx.lineWidth = 4;
+		ctx.beginPath(); ctx.arc( cx, cy, r, 0, Math.PI * 2 ); ctx.stroke();
+		ctx.lineWidth = 2;
+		ctx.beginPath(); ctx.arc( cx, cy, r - 10, 0, Math.PI * 2 ); ctx.stroke();
+		var now = new Date();
+		var lang = document.documentElement.lang || 'en';
+		var dayMonth;
+		try {
+			dayMonth = now.toLocaleDateString( lang, { day: '2-digit', month: 'short' } );
+		} catch ( e ) {
+			dayMonth = now.toLocaleDateString( 'en', { day: '2-digit', month: 'short' } );
+		}
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.font = '700 22px Poppins, sans-serif';
+		ctx.fillText( dayMonth.replace( /\./g, '' ).toUpperCase(), cx, cy - 10 );
+		ctx.font = '700 20px Poppins, sans-serif';
+		ctx.fillText( String( now.getFullYear() ), cx, cy + 16 );
+		// Wavy cancellation lines.
+		ctx.lineWidth = 3;
+		for ( var k = 0; k < 3; k++ ) {
+			ctx.beginPath();
+			for ( var t = 0; t <= 150; t += 5 ) {
+				var px = cx - r - 160 + t;
+				var py = cy - 24 + k * 22 + Math.sin( t / 12 ) * 6;
+				if ( 0 === t ) { ctx.moveTo( px, py ); } else { ctx.lineTo( px, py ); }
+			}
+			ctx.stroke();
+		}
+		ctx.restore();
+	}
+
+	function fitText( text, maxWidth, size, weight, family ) {
+		ctx.font = weight + ' ' + size + 'px ' + family;
+		if ( ctx.measureText( text ).width <= maxWidth ) {
+			return text;
+		}
+		while ( text.length > 1 && ctx.measureText( text + '…' ).width > maxWidth ) {
+			text = text.slice( 0, -1 );
+		}
+		return text + '…';
+	}
+
+	function cover( img, x, y, w, h ) {
+		var scale = Math.max( w / img.naturalWidth, h / img.naturalHeight );
+		var sw = w / scale;
+		var sh = h / scale;
+		var sx = ( img.naturalWidth - sw ) / 2;
+		var sy = ( img.naturalHeight - sh ) / 2;
+		ctx.drawImage( img, sx, sy, sw, sh, x, y, w, h );
+	}
+
+	function draw() {
+		queued = false;
+
+		if ( ! photo ) {
+			return;
+		}
+
+		var B = 28;
+
+		// Card and photo.
+		ctx.fillStyle = '#FBF7EF';
+		ctx.fillRect( 0, 0, W, H );
+		cover( photo, B, B, W - B * 2, H - B * 2 );
+
+		// Shade behind the title, top left.
+		var g = ctx.createLinearGradient( 0, B, 0, H * 0.55 );
+		g.addColorStop( 0, 'rgba(18,20,23,0.55)' );
+		g.addColorStop( 1, 'rgba(18,20,23,0)' );
+		ctx.fillStyle = g;
+		ctx.fillRect( B, B, W - B * 2, H * 0.55 - B );
+
+		// "Greetings from" and the place.
+		ctx.save();
+		ctx.shadowColor = 'rgba(0,0,0,0.35)';
+		ctx.shadowBlur = 18;
+		ctx.fillStyle = '#FFFFFF';
+		ctx.textAlign = 'left';
+		ctx.textBaseline = 'alphabetic';
+		ctx.font = '600 72px Caveat, cursive';
+		ctx.fillText( data.labels.greetings, 84, 150 );
+
+		var place = data.place.toUpperCase();
+		var size = 150;
+		ctx.font = '800 ' + size + 'px Poppins, sans-serif';
+		while ( size > 56 && ctx.measureText( place ).width > 1060 ) {
+			size -= 4;
+			ctx.font = '800 ' + size + 'px Poppins, sans-serif';
+		}
+		ctx.fillText( fitText( place, 1060, size, '800', 'Poppins, sans-serif' ), 76, 150 + size * 0.92 );
+		ctx.restore();
+
+		drawStamp();
+
+		// The message, on a note pinned to the bottom left.
+		var message = field.value.trim() || data.labels.placeholder;
+		var noteW = 700;
+		var pad = 36;
+		var fontSize = 54;
+		var lines;
+		ctx.font = '600 ' + fontSize + 'px Caveat, cursive';
+		lines = wrap( message, noteW - pad * 2 );
+		while ( lines.length > 4 && fontSize > 38 ) {
+			fontSize -= 2;
+			ctx.font = '600 ' + fontSize + 'px Caveat, cursive';
+			lines = wrap( message, noteW - pad * 2 );
+		}
+		lines = lines.slice( 0, 5 );
+		var lineH = fontSize * 1.12;
+		var footer = 52;
+		var noteH = pad + lines.length * lineH + 16 + footer;
+		var nx = 70;
+		var ny = H - B - 44 - noteH;
+
+		ctx.save();
+		ctx.translate( nx + noteW / 2, ny + noteH / 2 );
+		ctx.rotate( -0.025 );
+		ctx.translate( -noteW / 2, -noteH / 2 );
+		ctx.shadowColor = 'rgba(0,0,0,0.3)';
+		ctx.shadowBlur = 24;
+		ctx.shadowOffsetY = 6;
+		ctx.fillStyle = '#FFFDF7';
+		roundRect( 0, 0, noteW, noteH, 6 );
+		ctx.fill();
+		ctx.shadowColor = 'transparent';
+
+		ctx.fillStyle = '#1D3B9A';
+		ctx.font = '600 ' + fontSize + 'px Caveat, cursive';
+		ctx.textAlign = 'left';
+		ctx.textBaseline = 'alphabetic';
+		lines.forEach( function ( line, i ) {
+			ctx.fillText( line, pad, pad + fontSize * 0.85 + i * lineH );
+		} );
+
+		// Footer: a thin line, then the logo (or the blog's address).
+		var fy = noteH - footer;
+		ctx.strokeStyle = '#EDE6D6';
+		ctx.lineWidth = 2;
+		ctx.beginPath(); ctx.moveTo( pad, fy ); ctx.lineTo( noteW - pad, fy ); ctx.stroke();
+
+		if ( logo ) {
+			var lh = 28;
+			var lw = Math.min( 260, lh * ( logo.naturalWidth / logo.naturalHeight || 4 ) );
+			ctx.drawImage( logo, pad, fy + ( footer - lh ) / 2, lw, lw / ( logo.naturalWidth / logo.naturalHeight || 4 ) );
+		} else {
+			ctx.fillStyle = '#F25621';
+			ctx.font = '700 22px Poppins, sans-serif';
+			ctx.textBaseline = 'middle';
+			ctx.fillText( data.site, pad, fy + footer / 2 + 2 );
+		}
+		ctx.restore();
+
+		// Photo credit, in the white border.
+		if ( data.credit ) {
+			var credit = /^photo/i.test( data.credit ) ? data.credit : data.labels.photo + ': ' + data.credit;
+			ctx.save();
+			ctx.fillStyle = 'rgba(99,108,125,0.9)';
+			ctx.textAlign = 'right';
+			ctx.textBaseline = 'middle';
+			ctx.fillText( fitText( credit, 900, 15, '400', 'Inter, Arial, sans-serif' ), W - B, H - B / 2 );
+			ctx.restore();
+		}
+	}
+
+	function redraw() {
+		if ( ! queued ) {
+			queued = true;
+			window.requestAnimationFrame( draw );
+		}
+	}
+
+	function toBlob() {
+		return new Promise( function ( resolve ) {
+			canvas.toBlob( resolve, 'image/jpeg', 0.9 );
+		} );
+	}
+
+	function fileName() {
+		return 'postcard-' + slug( data.place ) + '.jpg';
+	}
+
+	function build() {
+		modal = el( 'div', 'hw-pc' );
+		modal.hidden = true;
+		modal.setAttribute( 'role', 'dialog' );
+		modal.setAttribute( 'aria-modal', 'true' );
+		modal.setAttribute( 'aria-labelledby', 'hw-pc-title' );
+
+		var box = el( 'div', 'hw-pc__box' );
+		var title = el( 'h2', 'hw-pc__title' );
+		title.id = 'hw-pc-title';
+		var close = el( 'button', 'hw-pc__close', '×' );
+		close.type = 'button';
+
+		var preview = el( 'div', 'hw-pc__preview' );
+		canvas = document.createElement( 'canvas' );
+		canvas.width = W;
+		canvas.height = H;
+		canvas.setAttribute( 'role', 'img' );
+		ctx = canvas.getContext( '2d' );
+		status = el( 'div', 'hw-pc__status', '…' );
+		preview.appendChild( canvas );
+		preview.appendChild( status );
+
+		var label = el( 'label', 'hw-pc__label' );
+		label.setAttribute( 'for', 'hw-pc-msg' );
+		field = el( 'textarea', 'hw-pc__msg' );
+		field.id = 'hw-pc-msg';
+		field.maxLength = MAX;
+		field.rows = 3;
+		count = el( 'div', 'hw-pc__count' );
+
+		var actions = el( 'div', 'hw-pc__actions' );
+		shareBtn = el( 'button', 'hw-pc__btn' );
+		shareBtn.type = 'button';
+		downloadBtn = el( 'button', 'hw-pc__btn' );
+		downloadBtn.type = 'button';
+		actions.appendChild( shareBtn );
+		actions.appendChild( downloadBtn );
+
+		var note = el( 'p', 'hw-pc__note' );
+
+		box.appendChild( close );
+		box.appendChild( title );
+		box.appendChild( preview );
+		box.appendChild( label );
+		box.appendChild( field );
+		box.appendChild( count );
+		box.appendChild( actions );
+		box.appendChild( note );
+		modal.appendChild( box );
+		document.body.appendChild( modal );
+
+		modal.addEventListener( 'click', function ( event ) {
+			if ( event.target === modal ) {
+				hide();
+			}
+		} );
+		close.addEventListener( 'click', hide );
+		document.addEventListener( 'keydown', function ( event ) {
+			if ( 'Escape' === event.key && modal && ! modal.hidden ) {
+				hide();
+			}
+		} );
+
+		field.addEventListener( 'input', function () {
+			count.textContent = field.value.length + ' / ' + MAX;
+			redraw();
+		} );
+
+		downloadBtn.addEventListener( 'click', function () {
+			track( 'postcard_download', 'Downloaded' );
+			toBlob().then( function ( blob ) {
+				if ( ! blob ) {
+					return;
+				}
+				var url = URL.createObjectURL( blob );
+				var a = document.createElement( 'a' );
+				a.href = url;
+				a.download = fileName();
+				document.body.appendChild( a );
+				a.click();
+				a.remove();
+				setTimeout( function () { URL.revokeObjectURL( url ); }, 4000 );
+			} );
+		} );
+
+		shareBtn.addEventListener( 'click', function () {
+			toBlob().then( function ( blob ) {
+				if ( ! blob ) {
+					return;
+				}
+				var file = new File( [ blob ], fileName(), { type: 'image/jpeg' } );
+				// Counted only once the reader has actually picked an app,
+				// not if they close the share menu.
+				navigator.share( { files: [ file ], title: data.labels.greetings + ' ' + data.place } ).then( function () {
+					track( 'postcard_share', 'Shared' );
+				} ).catch( function () {} );
+			} );
+		} );
+	}
+
+	/**
+	 * Counts a postcard action twice over: in Pages > Hub report (section
+	 * "Postcard maker") and in Google Analytics, as an hw_hub_click event
+	 * with link_type postcard_open, postcard_download or postcard_share.
+	 */
+	function track( type, report ) {
+		if ( window.hwHubStatsTrack ) {
+			window.hwHubStatsTrack( 'postcard', report );
+		}
+
+		var hub = document.getElementById( 'hw-hub' );
+		var params = {
+			link_type: type,
+			link_text: data.place,
+			link_url: '',
+			hub_type: hub ? ( hub.className.match( /hw-hub--(\w+)/ ) || [] )[ 1 ] || '' : '',
+			hub_title: document.title
+		};
+
+		if ( window.google_tag_manager || ! window.gtag ) {
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push( Object.assign( { event: 'hw_hub_click' }, params ) );
+		} else {
+			window.gtag( 'event', 'hw_hub_click', params );
+		}
+	}
+
+	function canShareFiles() {
+		try {
+			var test = new File( [ 'x' ], 'x.jpg', { type: 'image/jpeg' } );
+			return !! ( navigator.canShare && navigator.share && navigator.canShare( { files: [ test ] } ) );
+		} catch ( e ) {
+			return false;
+		}
+	}
+
+	function show( button ) {
+		try {
+			data = JSON.parse( button.getAttribute( 'data-hw-postcard' ) );
+		} catch ( e ) {
+			return;
+		}
+
+		if ( ! modal ) {
+			build();
+		}
+
+		opener = button;
+		track( 'postcard_open', 'Opened' );
+		photo = null;
+		logo = null;
+
+		modal.querySelector( '.hw-pc__title' ).textContent = data.labels.title;
+		modal.querySelector( '.hw-pc__close' ).setAttribute( 'aria-label', data.labels.close );
+		modal.querySelector( '.hw-pc__label' ).textContent = data.labels.message;
+		modal.querySelector( '.hw-pc__note' ).textContent = data.labels.note;
+		canvas.setAttribute( 'aria-label', data.labels.greetings + ' ' + data.place );
+		field.placeholder = data.labels.placeholder;
+		count.textContent = field.value.length + ' / ' + MAX;
+		shareBtn.textContent = data.labels.share;
+		shareBtn.hidden = ! canShareFiles();
+		downloadBtn.textContent = data.labels.download;
+		downloadBtn.className = 'hw-pc__btn' + ( shareBtn.hidden ? '' : ' hw-pc__btn--ghost' );
+		shareBtn.disabled = true;
+		downloadBtn.disabled = true;
+		status.textContent = '…';
+		status.hidden = false;
+		ctx.clearRect( 0, 0, W, H );
+
+		modal.hidden = false;
+		document.documentElement.classList.add( 'hw-pc-open' );
+		field.focus( { preventScroll: true } );
+
+		var current = data;
+
+		Promise.all( [
+			loadFonts(),
+			loadImage( data.photo ),
+			loadImage( data.logo ).catch( function () { return null; } )
+		] ).then( function ( results ) {
+			if ( current !== data ) {
+				return;
+			}
+			photo = results[ 1 ];
+			logo = results[ 2 ];
+			status.hidden = true;
+			shareBtn.disabled = false;
+			downloadBtn.disabled = false;
+			draw();
+		} ).catch( function () {
+			if ( current === data ) {
+				status.textContent = data.labels.error;
+			}
+		} );
+	}
+
+	function hide() {
+		modal.hidden = true;
+		document.documentElement.classList.remove( 'hw-pc-open' );
+		if ( opener ) {
+			opener.focus( { preventScroll: true } );
+		}
+	}
+
+	document.addEventListener( 'click', function ( event ) {
+		var button = event.target.closest ? event.target.closest( '[data-hw-postcard]' ) : null;
+		if ( button ) {
+			show( button );
+		}
+	} );
+}() );

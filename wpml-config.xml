@@ -58,6 +58,7 @@
 		<custom-field action="copy">hw_hub_hostels_source</custom-field>
 		<custom-field action="translate">hw_hub_hostels_title</custom-field>
 		<custom-field action="copy">hw_hub_hub_term</custom-field>
+		<custom-field action="copy">hw_hub_city_good_for</custom-field>
 		<custom-field action="translate">hw_hub_money_reads</custom-field>
 		<custom-field action="translate">hw_hub_newsletter_body</custom-field>
 		<custom-field action="copy">hw_hub_newsletter_shortcode</custom-field>

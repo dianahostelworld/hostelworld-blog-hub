@@ -262,6 +262,8 @@ function hw_hub_country_schema() {
 			),
 		),
 
+		'team'      => hw_hub_team_section(),
+
 		'faqs'      => array(
 			'label'  => __( 'FAQs', 'hostelworld' ),
 			'fields' => array(

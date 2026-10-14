@@ -46,6 +46,7 @@ if ( have_posts() ) {
 		<?php if ( $hero_markup ) : ?>
 			<div class="hw-hub__hero-bg"><?php echo $hero_markup; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<div class="hw-hub__hero-veil" aria-hidden="true"></div>
+			<?php hw_hub_postcard_button( $hub['hero_image'], $hub_label ); ?>
 		<?php endif; ?>
 
 		<?php hw_hub_render_breadcrumbs( get_the_ID(), $hub['parent_hub'] ); ?>
@@ -719,6 +720,9 @@ if ( have_posts() ) {
 		</section>
 	<?php endif; ?>
 
+	<?php /* ---------- From the Hostelworld team ---------- */ ?>
+	<?php hw_hub_render_team(); ?>
+
 	<?php /* ---------- FAQs ---------- */ ?>
 	<?php if ( $hub['faqs'] ) : ?>
 	<section id="faqs" class="hw-hub__faqs">
@@ -747,6 +751,9 @@ if ( have_posts() ) {
 		</div>
 	</section>
 	<?php endif; ?>
+
+	<?php /* ---------- Also trending this week ---------- */ ?>
+	<?php hw_hub_trending_strip(); ?>
 
 	<?php /* ---------- Closing CTA ---------- */ ?>
 	<div class="hw-hub__cta">

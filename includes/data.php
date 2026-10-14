@@ -204,7 +204,100 @@ function hw_hub_value( $key, $post_id ) {
 		return '1' === $raw;
 	}
 
+	if ( 'checks' === $field['type'] ) {
+		$parsed = hw_hub_parse_checks( $raw, $field['options'] );
+		return $parsed['values'];
+	}
+
 	return $raw;
+}
+
+/**
+ * The trip types a city hub can be "good for", in the order the destination
+ * finder shows them. Keys are what is stored; labels are what people see.
+ *
+ * @return array Slug => label.
+ */
+function hw_hub_trip_types() {
+	return array(
+		'city-break'   => 'City break',
+		'adventure'    => 'Adventure',
+		'beach'        => 'Beach',
+		'lakes-rivers' => 'Lakes & rivers',
+		'nightlife'    => 'Nightlife',
+		'food'         => 'Food',
+		'culture'      => 'Culture',
+		'road-trip'    => 'Road trip',
+	);
+}
+
+/**
+ * Reads a multi-choice value: stored slugs, or labels typed into a
+ * spreadsheet, separated by commas or semicolons, in any case.
+ *
+ * @param string|array $raw     Value, e.g. "city-break,food" or "City break; Food".
+ * @param array        $options Slug => label.
+ * @return array {
+ *     @type array $values  Recognised slugs, in the options' order, no repeats.
+ *     @type array $unknown Anything that matched no option, as written.
+ * }
+ */
+function hw_hub_parse_checks( $raw, $options ) {
+	$parts   = is_array( $raw ) ? $raw : preg_split( '/[,;]/', (string) $raw );
+	$found   = array();
+	$unknown = array();
+
+	foreach ( $parts as $part ) {
+		$part = trim( wp_specialchars_decode( (string) $part ) );
+
+		if ( '' === $part ) {
+			continue;
+		}
+
+		$match = '';
+
+		foreach ( $options as $slug => $label ) {
+			if ( 0 === strcasecmp( $part, (string) $slug ) || 0 === strcasecmp( $part, (string) $label ) ) {
+				$match = $slug;
+				break;
+			}
+		}
+
+		if ( '' === $match ) {
+			$unknown[] = $part;
+		} else {
+			$found[ $match ] = true;
+		}
+	}
+
+	// Keep the options' order, so the same choice is always stored the same way.
+	$values = array_values( array_filter( array_keys( $options ), function ( $slug ) use ( $found ) {
+		return isset( $found[ $slug ] );
+	} ) );
+
+	return array(
+		'values'  => $values,
+		'unknown' => $unknown,
+	);
+}
+
+/**
+ * Labels for stored slugs, for showing to people.
+ *
+ * @param array $slugs   Slugs.
+ * @param array $options Slug => label.
+ * @return array
+ */
+function hw_hub_check_labels( $slugs, $options ) {
+	$labels = array();
+
+	foreach ( (array) $slugs as $slug ) {
+		if ( isset( $options[ $slug ] ) ) {
+			$labels[] = $options[ $slug ];
+		}
+	}
+
+	return $labels;
 }
 
 /**
@@ -751,6 +844,8 @@ function hw_hub_ui_strings() {
 		'When to go to %s',
 		'Where to stay',
 		'Where to stay in %s',
+		'See all hostels in %s',
+		'See all places to stay in %s',
 	);
 }
 

@@ -132,6 +132,17 @@ function hw_hub_render_field( $key, $field, $post_id ) {
 				<span><?php esc_html_e( 'Yes', 'hostelworld' ); ?></span>
 			</label>
 
+		<?php elseif ( 'checks' === $field['type'] ) : ?>
+			<?php $ticked = hw_hub_parse_checks( $value, $field['options'] ); ?>
+			<div class="hw-hub-admin__checks" id="<?php echo esc_attr( $id ); ?>">
+				<?php foreach ( $field['options'] as $option_value => $option_label ) : ?>
+					<label class="hw-hub-admin__check">
+						<input type="checkbox" name="<?php echo esc_attr( $name ); ?>[]" value="<?php echo esc_attr( $option_value ); ?>" <?php checked( in_array( $option_value, $ticked['values'], true ) ); ?>>
+						<span><?php echo esc_html( $option_label ); ?></span>
+					</label>
+				<?php endforeach; ?>
+			</div>
+
 		<?php elseif ( 'media' === $field['type'] ) : ?>
 			<div class="hw-hub-admin__media" data-target="<?php echo esc_attr( $id ); ?>">
 				<div class="hw-hub-admin__preview">
@@ -344,6 +355,9 @@ function hw_hub_render_row( $key, $field, $labels, $row, $index ) {
 							<button type="button" class="button button-small hw-hub-admin__select"><?php esc_html_e( 'Upload / choose', 'hostelworld' ); ?></button>
 							<button type="button" class="button-link hw-hub-admin__remove"<?php echo $value ? '' : ' hidden'; ?>><?php esc_html_e( 'Remove', 'hostelworld' ); ?></button>
 						</div>
+					<?php elseif ( ! empty( $field['long'] ) && in_array( $col, (array) $field['long'], true ) ) : ?>
+						<?php // A longer piece of text. Saved on one line, like every other cell. ?>
+						<textarea name="<?php echo esc_attr( $name ); ?>" rows="3" class="widefat"><?php echo esc_textarea( $value ); ?></textarea>
 					<?php else : ?>
 						<input type="text" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" class="widefat">
 					<?php endif; ?>
@@ -780,6 +794,9 @@ function hw_hub_save_meta_box( $post_id ) {
 			$value = isset( $field['options'][ $raw ] ) ? $raw : (string) array_key_first( $field['options'] );
 		} elseif ( 'check' === $field['type'] ) {
 			$value = $raw ? '1' : '';
+		} elseif ( 'checks' === $field['type'] ) {
+			$parsed = hw_hub_parse_checks( is_array( $raw ) ? array_map( 'sanitize_key', $raw ) : array(), $field['options'] );
+			$value  = implode( ',', $parsed['values'] );
 		} elseif ( 'media' === $field['type'] ) {
 			$value = $raw ? (string) absint( $raw ) : '';
 		} elseif ( 'text' === $field['type'] ) {

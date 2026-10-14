@@ -3,7 +3,7 @@
  * Plugin Name:       Hostelworld Blog Hubs
  * Plugin URI:        https://www.hostelworld.com/blog/
  * Description:       Adds editable Continent, Country, City and State Hub page templates for the blog, plus a Country Hub variant that lists states instead of cities. All content is edited on the Page itself, in the panel below the editor.
- * Version:           5.8.1
+ * Version:           5.18.3
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            Hostelworld
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HW_HUB_VERSION', '5.8.1' );
+define( 'HW_HUB_VERSION', '5.18.3' );
 // Kept as-is deliberately: this string is stored on every Page already
 // using the template. Renaming it would unassign them.
 define( 'HW_HUB_TEMPLATE_KEY', 'hw-hub-destination' );
@@ -56,6 +56,7 @@ require_once HW_HUB_PATH . 'includes/schema-city.php';
 require_once HW_HUB_PATH . 'includes/schema-states.php';
 require_once HW_HUB_PATH . 'includes/data.php';
 require_once HW_HUB_PATH . 'includes/data-states.php';
+require_once HW_HUB_PATH . 'includes/continents.php';
 require_once HW_HUB_PATH . 'includes/hostels-embed.php';
 require_once HW_HUB_PATH . 'includes/destination-box.php';
 require_once HW_HUB_PATH . 'includes/helpers.php';
@@ -63,6 +64,13 @@ require_once HW_HUB_PATH . 'includes/admin.php';
 require_once HW_HUB_PATH . 'includes/deepl.php';
 require_once HW_HUB_PATH . 'includes/import.php';
 require_once HW_HUB_PATH . 'includes/export.php';
+require_once HW_HUB_PATH . 'includes/good-for-bulk.php';
+require_once HW_HUB_PATH . 'includes/report.php';
+require_once HW_HUB_PATH . 'includes/checkup.php';
+require_once HW_HUB_PATH . 'includes/hostels-gaps.php';
+require_once HW_HUB_PATH . 'includes/postcard.php';
+require_once HW_HUB_PATH . 'includes/trending.php';
+require_once HW_HUB_PATH . 'includes/team.php';
 
 /**
  * Adds the template to the dropdown on the Page edit screen.

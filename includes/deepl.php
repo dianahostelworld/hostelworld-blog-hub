@@ -33,6 +33,7 @@ function hw_hub_untranslatable_fields() {
 		'events_source', 'events_country', 'events_continent', 'events_count', 'events_cache',
 		'newsletter_shortcode', 'city_slug', 'country_slug', 'currency', 'areas_zoom',
 		'areas_map', 'areas_live', 'hostels_pins', 'live_stats', 'layout',
+		'good_for',
 	);
 }
 
